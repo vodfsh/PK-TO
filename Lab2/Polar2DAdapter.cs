@@ -1,14 +1,21 @@
 namespace Lab2;
 
-public class Polar2DAdapter: IPolar2D, IVector
+public class Polar2DAdapter : IPolar2D, IVector
 {
-    private Vector2D srcVector;
-    public double GetAngle()
+    private readonly Vector2D srcVector;
+
+    public Polar2DAdapter(Vector2D srcVector)
     {
-        throw new NotImplementedException();
+        this.srcVector = srcVector;
     }
 
-    double IPolar2D.Abs()
+    public double GetAngle()
+    {
+        var comp = srcVector.GetComponents();
+        return Math.Atan2(comp[1], comp[0]);
+    }
+
+    public double Abs()
     {
         return srcVector.Abs();
     }
@@ -25,11 +32,11 @@ public class Polar2DAdapter: IPolar2D, IVector
 
     public IVector Cross(IVector other)
     {
-        throw new NotImplementedException();
+        return srcVector.Cross(other);
     }
 
-    double IVector.Abs()
+    public override string ToString()
     {
-        return srcVector.Abs();
+        return $"(r = {Abs():F2},  {GetAngle():F2} rad, {GetAngle() * (180.0 / Math.PI):F2}*)";
     }
 }
