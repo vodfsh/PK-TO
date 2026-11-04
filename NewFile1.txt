@@ -1,0 +1,4 @@
+// Stan -> Zdrowy, Chory, ...   
+// Momento for each object, maybe a main one as well    
+// start and max population    
+// render a visualisation
