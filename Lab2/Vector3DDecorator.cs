@@ -17,11 +17,6 @@ public class Vector3DDecorator : IVector
         return Math.Sqrt(baseAbs * baseAbs + z * z);
     }
 
-    public double CDot(IVector other)
-    {
-        return ((IVector)this).CDot(other);
-    }
-
     public double[] GetComponents()
     {
         var baseComp = srcVector.GetComponents();

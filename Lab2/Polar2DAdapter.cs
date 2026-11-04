@@ -20,11 +20,6 @@ public class Polar2DAdapter : IPolar2D, IVector
         return srcVector.Abs();
     }
 
-    public double CDot(IVector other)
-    {
-        return srcVector.CDot(other);
-    }
-
     public double[] GetComponents()
     {
         return srcVector.GetComponents();

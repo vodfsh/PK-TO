@@ -11,11 +11,6 @@ public class Vector2D : IVector
         this.y = y;
     }
 
-    public double CDot(IVector other)
-    {
-        return ((IVector)this).CDot(other);
-    }
-
     public virtual double[] GetComponents()
     {
         return new[] { x, y };
