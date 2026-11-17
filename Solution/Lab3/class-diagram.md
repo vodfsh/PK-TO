@@ -149,7 +149,7 @@ classDiagram
 
     %% ---------- UI ----------
     class Home {
-        <<Blazor page>>
+        <<Blazor>>
         -phase Phase
         -sim Simulation
         -careTaker CareTaker
@@ -158,7 +158,7 @@ classDiagram
         -RunAsync() DrawAsync()
     }
     class canvasjs {
-        <<JS interop>>
+        <<JS>>
         initCanvas(w, h)
         draw(frame)
         downloadFile(name, text)

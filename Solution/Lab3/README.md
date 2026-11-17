@@ -1,14 +1,12 @@
 # Laboratorium 3 – Symulacja epidemii (Stan + Pamiątka)
 
-**Technologie:** Blazor WebAssembly, .NET 10, C#. Renderowanie na elemencie HTML `<canvas>` przez niewielki plik JS
-interop (`canvas.js`). Całość działa po stronie klienta.
+**Technologie:** Blazor WebAssembly, C#. Renderowanie na `<canvas>`. Całość działa po stronie klienta.
 
 ## 1. Zadanie
 
-Symulacja poruszania się osobników w pomieszczeniu n × m m. Na granicy osobnik zawraca lub opuszcza obszar (50 % /
+Symulacja poruszania się osobników w pomieszczeniu `n x m` m. Na granicy osobnik zawraca lub opuszcza obszar (50 % /
 50 %), nowi osobnicy wkraczają w losowych punktach granicy (10 % z nich jest zakażonych), a zakażenie przenosi się przez
-kontakt. Stan symulacji ma być możliwy do zapisu i wczytania w dowolnym momencie *t*. Obsłużono dwa przypadki: brak
-odporności na starcie oraz część populacji początkowej odporna. Ruch jest modelowany wektorami z Laboratorium 2.
+kontakt. Stan symulacji ma być możliwy do zapisu i wczytania w dowolnym momencie.
 
 ## 2. Model symulacji (`Simulation.Advance()`)
 
@@ -25,8 +23,8 @@ Jedna sekunda symulacji = **25 kroków** (`Dt = 0,04 s`). Każdy krok przebiega 
    promieniu 2 m (0,5 bezobjawowy, 1,0 objawowy) lub 0.
 5. **Aktualizacja stanu**: obiekt bieżącego stanu każdego osobnika aktualizuje tego osobnika.
 
-Używany jest jeden generator z ziarnem (`Rng`, splitmix64, stan = jedna liczba `ulong`), wywoływany w stałej kolejności,
-więc przebieg jest w pełni **deterministyczny**.
+Używany jest jeden generator z ziarnem, wywoływany w stałej kolejności,
+więc przebieg jest w deterministyczny.
 
 ## 3. Wektory (Laboratorium 2)
 
@@ -63,12 +61,9 @@ zakażenie trwa 20–30 s, po czym daje odporność.
 
 ## 6. Interfejs i ustawienia
 
-`Home.razor` ma trzy fazy: **Setup → Running ⇄ Paused**. Ustawienia można zmieniać tylko w fazie Setup: rozmiar
+`Home.razor` ma trzy fazy: **Setup -> Running <-> Paused**. W fazie Setup można zmieniać ustawienia: rozmiar
 pomieszczenia (domyślnie 20 × 20 m), populacja początkowa (100), populacja maksymalna (150, twardy limit wkraczania),
-początkowa liczba zakażonych (5), % odpornych oraz ziarno (puste = losowe). `PeriodicTimer` tyka z częstotliwością 25
-Hz, wywołuje `Advance()`, a następnie `draw` w JS. Canvas jest skalowany do maks. 800 px. Kolory: zielony zdrowy,
-pomarańczowy bezobjawowy, czerwony objawowy, niebieski odporny. Pasek statystyk pokazuje *t*, krok, populację i
-liczebność każdego stanu. Wczytanie pliku odtwarza ustawienia i otwiera symulację wstrzymaną w zapisanym momencie *t*.
+początkowa liczba zakażonych (5), % odpornych oraz ziarno (puste = losowe). 
 
 ## 7. Pliki
 
