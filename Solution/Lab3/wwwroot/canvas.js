@@ -85,7 +85,7 @@
     };
 
     window.downloadFile = function (name, text) {
-        const blob = new Blob([text], { type: 'application/json' });
+        const blob = new Blob([text], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
@@ -93,6 +93,8 @@
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 1000);
     };
 })();

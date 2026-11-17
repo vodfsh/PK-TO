@@ -2,6 +2,17 @@ namespace Lab3.Sim;
 
 public sealed class Person
 {
+    public Person(int id, Vector2D pos, V2DPolarInheritance vel, StateKind kind,
+        double timer = 0, double exposure = 0)
+    {
+        Id = id;
+        Pos = pos;
+        Vel = vel;
+        State = States.For(kind);
+        Timer = timer;
+        Exposure = exposure;
+    }
+
     public int Id { get; }
     public Vector2D Pos { get; set; }
     public V2DPolarInheritance Vel { get; set; }
@@ -12,19 +23,8 @@ public sealed class Person
     public double Timer { get; set; }
     public double Exposure { get; set; }
 
-    // Recalculated from scratch every step, so it is deliberately not persisted.
+    // Recalculated from scratch every step
     public double Contact { get; set; }
-
-    public Person(int id, Vector2D pos, V2DPolarInheritance vel, StateKind kind,
-                  double timer = 0, double exposure = 0)
-    {
-        Id = id;
-        Pos = pos;
-        Vel = vel;
-        State = States.For(kind);
-        Timer = timer;
-        Exposure = exposure;
-    }
 
     public void SetState(StateKind kind)
     {

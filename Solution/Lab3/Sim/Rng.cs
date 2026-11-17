@@ -3,12 +3,12 @@ namespace Lab3.Sim;
 // splitmix64: small, fast and easy to snapshot because all state is one ulong.
 public sealed class Rng
 {
-    public ulong State { get; set; }
-
     public Rng(ulong seed)
     {
         State = seed;
     }
+
+    public ulong State { get; set; }
 
     public ulong NextULong()
     {
@@ -32,7 +32,9 @@ public sealed class Rng
     public int NextInt(int maxExclusive)
     {
         if (maxExclusive <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxExclusive));
+        }
 
         return (int)(NextULong() % (ulong)maxExclusive);
     }

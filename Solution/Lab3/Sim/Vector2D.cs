@@ -2,9 +2,6 @@ namespace Lab3.Sim;
 
 public class Vector2D : IVector
 {
-    public double X { get; set; }
-    public double Y { get; set; }
-
     public Vector2D() : this(0, 0)
     {
     }
@@ -14,6 +11,9 @@ public class Vector2D : IVector
         X = x;
         Y = y;
     }
+
+    public double X { get; set; }
+    public double Y { get; set; }
 
     public virtual double Abs()
     {

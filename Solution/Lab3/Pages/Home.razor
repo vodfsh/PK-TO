@@ -10,31 +10,31 @@
             <div class="setup-grid">
                 <label class="field">
                     <span>Room width (m)</span>
-                    <input class="input" type="number" min="1" step="any" @bind="width" />
+                    <input class="input" type="number" min="1" step="any" @bind="width"/>
                 </label>
                 <label class="field">
                     <span>Room height (m)</span>
-                    <input class="input" type="number" min="1" step="any" @bind="height" />
+                    <input class="input" type="number" min="1" step="any" @bind="height"/>
                 </label>
                 <label class="field">
                     <span>Start population</span>
-                    <input class="input" type="number" min="0" step="1" @bind="start" />
+                    <input class="input" type="number" min="0" step="1" @bind="start"/>
                 </label>
                 <label class="field">
                     <span>Max population</span>
-                    <input class="input" type="number" min="0" step="1" @bind="max" />
+                    <input class="input" type="number" min="0" step="1" @bind="max"/>
                 </label>
                 <label class="field">
                     <span>Initial infected</span>
-                    <input class="input" type="number" min="0" step="1" @bind="initialInfected" />
+                    <input class="input" type="number" min="0" step="1" @bind="initialInfected"/>
                 </label>
                 <label class="field">
                     <span>% immune of initial pop</span>
-                    <input class="input" type="number" min="0" max="100" step="1" @bind="immunePercent" />
+                    <input class="input" type="number" min="0" max="100" step="1" @bind="immunePercent"/>
                 </label>
                 <label class="field">
                     <span>Seed (blank = random)</span>
-                    <input class="input" type="text" @bind="seedText" placeholder="random" />
+                    <input class="input" type="text" @bind="seedText" placeholder="random"/>
                 </label>
             </div>
         </fieldset>
@@ -47,7 +47,7 @@
                     Load snapshot
                     <InputFile @key="fileInputKey" OnChange="LoadFile"
                                accept=".json,application/json"
-                               class="file-input" style="display:none" />
+                               class="file-input" style="display:none"/>
                 </label>
             </div>
         }
@@ -66,7 +66,7 @@
                     Load snapshot
                     <InputFile @key="fileInputKey" OnChange="LoadFile"
                                accept=".json,application/json"
-                               class="file-input" style="display:none" />
+                               class="file-input" style="display:none"/>
                 </label>
                 <button class="button danger" @onclick="Reset">Reset</button>
             </div>
@@ -89,10 +89,12 @@
                     <span><b>seed</b> @sim.Settings.Seed</span>
                 </div>
                 <div class="stats-row">
-                    <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.Healthy)"></i> healthy @sim.HealthyCount (@Percent(sim.HealthyCount))</span>
+                    <span class="stat"><i class="dot"
+                                          style="background:@ColorOf(StateKind.Healthy)"></i> healthy @sim.HealthyCount (@Percent(sim.HealthyCount))</span>
                     <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.InfectedAsymptomatic)"></i> asymptomatic @sim.AsymptomaticCount</span>
                     <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.InfectedSymptomatic)"></i> symptomatic @sim.SymptomaticCount</span>
-                    <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.Immune)"></i> immune @sim.ImmuneCount</span>
+                    <span class="stat"><i class="dot"
+                                          style="background:@ColorOf(StateKind.Immune)"></i> immune @sim.ImmuneCount</span>
                     <span><b>not healthy</b> @(sim.People.Count - sim.HealthyCount) (@Percent(sim.People.Count - sim.HealthyCount))</span>
                 </div>
             </div>
@@ -105,6 +107,7 @@
 </div>
 
 @code {
+
     private enum Phase
     {
         Setup,
@@ -406,8 +409,8 @@
             Scale = scale,
             People = sim.People.Select(p => new
             {
-                X = p.Pos.X,
-                Y = p.Pos.Y,
+                p.Pos.X,
+                p.Pos.Y,
                 Kind = (int)p.Kind
             })
         });
@@ -418,4 +421,5 @@
         disposed = true;
         await StopLoopAsync();
     }
+
 }

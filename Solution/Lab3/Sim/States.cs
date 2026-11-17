@@ -54,11 +54,15 @@ public sealed class HealthyState : IPersonState
 
         person.Exposure += Simulation.Dt;
         if (person.Exposure + 1e-9 < Simulation.ExposureNeeded)
+        {
             return;
+        }
 
         person.Exposure = 0;
         if (simulation.Rng.Chance(person.Contact))
+        {
             person.Infect(simulation.Rng);
+        }
     }
 }
 
@@ -72,7 +76,9 @@ public abstract class InfectedState : IPersonState
     {
         person.Timer -= Simulation.Dt;
         if (person.Timer <= 0)
+        {
             person.SetState(StateKind.Immune);
+        }
     }
 }
 

@@ -20,6 +20,6 @@ public static class SimulationJson
     public static SimulationMemento Deserialize(string json)
     {
         return JsonSerializer.Deserialize<SimulationMemento>(json, Options)
-            ?? throw new InvalidDataException("The snapshot file is empty or invalid.");
+               ?? throw new InvalidDataException("The snapshot file is empty or invalid.");
     }
 }

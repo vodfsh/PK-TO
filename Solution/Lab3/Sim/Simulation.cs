@@ -21,23 +21,8 @@ public sealed class Simulation
     public const double SymptomaticChance = 0.5;
 
     public const double EntrantInfectedChance = 0.10;
-    // One entrant every 0.4 s keeps the population continuous in the default room.
     public const int SpawnEveryNSteps = 10;
     public const double BorderBounceChance = 0.5;
-
-    public Settings Settings { get; }
-    public List<Person> People { get; }
-    public Rng Rng { get; private set; }
-    public long Step { get; private set; }
-    public int SpawnCounter { get; private set; }
-    public int NextId { get; private set; }
-
-    public double TimeSeconds => Step / (double)StepsPerSecond;
-    public int HealthyCount => People.Count(p => p.Kind == StateKind.Healthy);
-    public int AsymptomaticCount => People.Count(p => p.Kind == StateKind.InfectedAsymptomatic);
-    public int SymptomaticCount => People.Count(p => p.Kind == StateKind.InfectedSymptomatic);
-    public int InfectedCount => AsymptomaticCount + SymptomaticCount;
-    public int ImmuneCount => People.Count(p => p.Kind == StateKind.Immune);
 
     public Simulation(Settings settings)
     {
@@ -52,7 +37,7 @@ public sealed class Simulation
     }
 
     private Simulation(Settings settings, long step, ulong rngState, int spawnCounter,
-                       int nextId, List<Person> people)
+        int nextId, List<Person> people)
     {
         Settings = settings;
         Step = step;
@@ -62,12 +47,18 @@ public sealed class Simulation
         People = people;
     }
 
-    private enum InitialKind
-    {
-        Healthy,
-        Infected,
-        Immune
-    }
+    public Settings Settings { get; }
+    public List<Person> People { get; }
+    public Rng Rng { get; }
+    public long Step { get; private set; }
+    public int SpawnCounter { get; private set; }
+    public int NextId { get; private set; }
+
+    public double TimeSeconds => Step / (double)StepsPerSecond;
+    public int HealthyCount => People.Count(p => p.Kind == StateKind.Healthy);
+    public int AsymptomaticCount => People.Count(p => p.Kind == StateKind.InfectedAsymptomatic);
+    public int SymptomaticCount => People.Count(p => p.Kind == StateKind.InfectedSymptomatic);
+    public int ImmuneCount => People.Count(p => p.Kind == StateKind.Immune);
 
     private void InitializePopulation()
     {
@@ -81,11 +72,19 @@ public sealed class Simulation
 
         var kinds = new List<InitialKind>(start);
         for (var i = 0; i < immuneCount; i++)
+        {
             kinds.Add(InitialKind.Immune);
+        }
+
         for (var i = 0; i < infectedCount; i++)
+        {
             kinds.Add(InitialKind.Infected);
+        }
+
         for (var i = 0; i < healthyCount; i++)
+        {
             kinds.Add(InitialKind.Healthy);
+        }
 
         for (var i = kinds.Count - 1; i > 0; i--)
         {
@@ -122,7 +121,9 @@ public sealed class Simulation
         UpdateContacts();
 
         foreach (var person in People)
+        {
             person.State.Update(person, this);
+        }
 
         Step++;
     }
@@ -137,7 +138,7 @@ public sealed class Simulation
                 person.Vel.Radius = Rng.NextDouble(MinSpeed, MaxSpeed);
             }
 
-            person.Pos = person.Pos + person.Vel * Dt;
+            person.Pos += person.Vel * Dt;
         }
     }
 
@@ -150,7 +151,9 @@ public sealed class Simulation
             var outsideX = person.Pos.X < 0 || person.Pos.X > Settings.W;
             var outsideY = person.Pos.Y < 0 || person.Pos.Y > Settings.H;
             if (!outsideX && !outsideY)
+            {
                 continue;
+            }
 
             if (!Rng.Chance(BorderBounceChance))
             {
@@ -182,17 +185,23 @@ public sealed class Simulation
         }
 
         if (toRemove is not null)
+        {
             People.RemoveAll(p => toRemove.Contains(p));
+        }
     }
 
     private void TrySpawn()
     {
         if (++SpawnCounter < SpawnEveryNSteps)
+        {
             return;
+        }
 
         SpawnCounter = 0;
         if (People.Count < Settings.Max)
+        {
             Spawn();
+        }
     }
 
     private void Spawn()
@@ -233,9 +242,13 @@ public sealed class Simulation
             StateKind.Healthy);
 
         if (Rng.Chance(EntrantInfectedChance))
+        {
             person.Infect(Rng);
+        }
         else if (Rng.Chance(Settings.ImmunePercent))
+        {
             person.SetState(StateKind.Immune);
+        }
 
         People.Add(person);
     }
@@ -246,17 +259,23 @@ public sealed class Simulation
         {
             person.Contact = 0;
             if (person.Kind != StateKind.Healthy)
+            {
                 continue;
+            }
 
             var bestChance = 0.0;
             foreach (var other in People)
             {
                 var chance = other.State.InfectionChance;
                 if (chance <= bestChance)
+                {
                     continue;
+                }
 
                 if (person.Pos.DistanceSquared(other.Pos) <= InfectionRadiusSquared)
+                {
                     bestChance = chance;
+                }
             }
 
             person.Contact = bestChance;
@@ -286,18 +305,32 @@ public sealed class Simulation
         ArgumentNullException.ThrowIfNull(memento);
 
         var settings = memento.Settings
-            ?? throw new InvalidDataException("Snapshot has no settings.");
+                       ?? throw new InvalidDataException("Snapshot has no settings.");
 
         if (settings.W <= 0 || settings.H <= 0)
+        {
             throw new InvalidDataException("Snapshot has invalid room dimensions.");
+        }
+
         if (settings.Max < 0 || settings.Start < 0 || settings.Start > settings.Max)
+        {
             throw new InvalidDataException("Snapshot has invalid population settings.");
+        }
+
         if (settings.InitialInfected < 0 || settings.InitialInfected > settings.Start)
+        {
             throw new InvalidDataException("Snapshot has an invalid initial infected count.");
+        }
+
         if (settings.ImmunePercent < 0 || settings.ImmunePercent > 1)
+        {
             throw new InvalidDataException("Snapshot has an invalid immune percentage.");
+        }
+
         if (memento.People is null)
+        {
             throw new InvalidDataException("Snapshot has no population.");
+        }
 
         return new Simulation(
             settings,
@@ -306,5 +339,12 @@ public sealed class Simulation
             memento.SpawnCounter,
             memento.NextId,
             memento.People.Select(Person.FromMemento).ToList());
+    }
+
+    private enum InitialKind
+    {
+        Healthy,
+        Infected,
+        Immune
     }
 }

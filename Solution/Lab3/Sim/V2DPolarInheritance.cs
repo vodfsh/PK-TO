@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Lab3.Sim;
 
 public class V2DPolarInheritance : Vector2D, IPolar2D
