@@ -24,11 +24,15 @@
         canvas.height = size.height;
     };
 
-    window.draw = function (people, w, h, scale) {
+    window.draw = function (frame) {
+        const w = frame.width;
+        const h = frame.height;
+        const scale = frame.scale;
+
+        const size = sizeFor(w, h);
         const canvas = getCanvas();
         if (!canvas) return;
 
-        const size = sizeFor(w, h);
         if (canvas.width !== size.width || canvas.height !== size.height) {
             canvas.width = size.width;
             canvas.height = size.height;
@@ -64,11 +68,11 @@
         ctx.lineWidth = 2;
         ctx.strokeRect(1, 1, width - 2, height - 2);
 
-        // People: [x, y, kind, x, y, kind, ...].
-        for (let i = 0; i < people.length; i += 3) {
-            const px = people[i] * scale;
-            const py = height - people[i + 1] * scale;
-            const kind = people[i + 2] | 0;
+        // People: [{x, y, kind}, ...].
+        for (const person of frame.people) {
+            const px = person.x * scale;
+            const py = height - person.y * scale;
+            const kind = person.kind | 0;
 
             ctx.beginPath();
             ctx.arc(px, py, 4, 0, Math.PI * 2);

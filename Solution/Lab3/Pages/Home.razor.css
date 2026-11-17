@@ -23,6 +23,12 @@ fieldset {
     gap: .75rem 1rem;
 }
 
+.hint {
+    margin: .75rem 0 0;
+    color: #64748b;
+    font-size: .85rem;
+}
+
 .field {
     display: flex;
     flex-direction: column;

@@ -29,7 +29,7 @@
                     <input class="input" type="number" min="0" step="1" @bind="initialInfected" />
                 </label>
                 <label class="field">
-                    <span>Immune (%)</span>
+                    <span>% immune of initial pop</span>
                     <input class="input" type="number" min="0" max="100" step="1" @bind="immunePercent" />
                 </label>
                 <label class="field">
@@ -398,23 +398,19 @@
 
         var settings = sim.Settings;
         var scale = 800.0 / Math.Max(settings.W, settings.H);
-        await JS.InvokeVoidAsync("draw", Pack(sim), settings.W, settings.H, scale);
-    }
 
-    private static double[] Pack(Simulation simulation)
-    {
-        var data = new double[simulation.People.Count * 3];
-
-        for (var i = 0; i < simulation.People.Count; i++)
+        await JS.InvokeVoidAsync("draw", new
         {
-            var person = simulation.People[i];
-            var offset = i * 3;
-            data[offset] = person.Pos.X;
-            data[offset + 1] = person.Pos.Y;
-            data[offset + 2] = (int)person.Kind;
-        }
-
-        return data;
+            Width = settings.W,
+            Height = settings.H,
+            Scale = scale,
+            People = sim.People.Select(p => new
+            {
+                X = p.Pos.X,
+                Y = p.Pos.Y,
+                Kind = (int)p.Kind
+            })
+        });
     }
 
     public async ValueTask DisposeAsync()
