@@ -1,0 +1,421 @@
+﻿@page "/"
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Lab 3 – Epidemic simulation</PageTitle>
+
+<div class="lab">
+    <section class="panel">
+        <fieldset disabled="@(phase != Phase.Setup)">
+            <div class="setup-grid">
+                <label class="field">
+                    <span>Room width (m)</span>
+                    <input class="input" type="number" min="1" step="any" @bind="width" />
+                </label>
+                <label class="field">
+                    <span>Room height (m)</span>
+                    <input class="input" type="number" min="1" step="any" @bind="height" />
+                </label>
+                <label class="field">
+                    <span>Start population</span>
+                    <input class="input" type="number" min="0" step="1" @bind="start" />
+                </label>
+                <label class="field">
+                    <span>Max population</span>
+                    <input class="input" type="number" min="0" step="1" @bind="max" />
+                </label>
+                <label class="field">
+                    <span>Initial infected</span>
+                    <input class="input" type="number" min="0" step="1" @bind="initialInfected" />
+                </label>
+                <label class="field">
+                    <span>Immune (%)</span>
+                    <input class="input" type="number" min="0" max="100" step="1" @bind="immunePercent" />
+                </label>
+                <label class="field">
+                    <span>Seed (blank = random)</span>
+                    <input class="input" type="text" @bind="seedText" placeholder="random" />
+                </label>
+            </div>
+        </fieldset>
+
+        @if (phase == Phase.Setup)
+        {
+            <div class="actions">
+                <button class="button primary" @onclick="Start">Start</button>
+                <label class="button secondary file-button">
+                    Load snapshot
+                    <InputFile @key="fileInputKey" OnChange="LoadFile"
+                               accept=".json,application/json"
+                               class="file-input" style="display:none" />
+                </label>
+            </div>
+        }
+        else if (phase == Phase.Running)
+        {
+            <div class="actions">
+                <button class="button warning" @onclick="Pause">Pause</button>
+            </div>
+        }
+        else
+        {
+            <div class="actions">
+                <button class="button primary" @onclick="Resume">Resume</button>
+                <button class="button success" @onclick="DownloadSnapshot">Download snapshot</button>
+                <label class="button secondary file-button">
+                    Load snapshot
+                    <InputFile @key="fileInputKey" OnChange="LoadFile"
+                               accept=".json,application/json"
+                               class="file-input" style="display:none" />
+                </label>
+                <button class="button danger" @onclick="Reset">Reset</button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div class="error">@error</div>
+        }
+    </section>
+
+    @if (sim is not null)
+    {
+        <section class="panel">
+            <div class="stats">
+                <span><b>t</b> @sim.TimeSeconds.ToString("F2") s</span>
+                <span><b>step</b> @sim.Step</span>
+                <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.Healthy)"></i> healthy @sim.HealthyCount (@Percent(sim.HealthyCount))</span>
+                <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.InfectedAsymptomatic)"></i> asymptomatic @sim.AsymptomaticCount</span>
+                <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.InfectedSymptomatic)"></i> symptomatic @sim.SymptomaticCount</span>
+                <span class="stat"><i class="dot" style="background:@ColorOf(StateKind.Immune)"></i> immune @sim.ImmuneCount</span>
+                <span><b>not healthy</b> @(sim.People.Count - sim.HealthyCount) (@Percent(sim.People.Count - sim.HealthyCount))</span>
+                <span><b>total</b> @sim.People.Count / @sim.Settings.Max</span>
+                <span><b>seed</b> @sim.Settings.Seed</span>
+            </div>
+
+            <div class="canvas-wrap">
+                <canvas id="simCanvas" @ref="canvas"></canvas>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private enum Phase
+    {
+        Setup,
+        Running,
+        Paused
+    }
+
+    private readonly CareTaker careTaker = new();
+
+    private Phase phase = Phase.Setup;
+    private Simulation? sim;
+    private CancellationTokenSource? cts;
+    private Task? runTask;
+    private ElementReference canvas;
+    private bool needsCanvasInit;
+    private bool disposed;
+    private int fileInputKey;
+    private string? error;
+
+    // Setup fields.
+    private double width = 20;
+    private double height = 20;
+    private int start = 100;
+    private int max = 150;
+    private int initialInfected = 5;
+    private double immunePercent;
+    private string seedText = string.Empty;
+
+    private string Percent(int count)
+    {
+        var total = sim?.People.Count ?? 0;
+        return total == 0 ? "0.0%" : $"{count * 100.0 / total:F1}%";
+    }
+
+    private static string ColorOf(StateKind kind)
+    {
+        return States.For(kind).Color;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (needsCanvasInit && sim is not null)
+        {
+            needsCanvasInit = false;
+            await InitAndDrawAsync();
+        }
+    }
+
+    private async Task Start()
+    {
+        error = null;
+
+        if (width <= 0 || height <= 0)
+        {
+            error = "Room width and height must be positive.";
+            return;
+        }
+
+        if (start < 0 || max < start)
+        {
+            error = "Max population must be at least the start population.";
+            return;
+        }
+
+        if (initialInfected < 0 || initialInfected > start)
+        {
+            error = "Initial infected must be between 0 and the start population.";
+            return;
+        }
+
+        if (immunePercent < 0 || immunePercent > 100)
+        {
+            error = "Immune percentage must be between 0 and 100.";
+            return;
+        }
+
+        if (!TryParseSeed(out var seed))
+            return;
+
+        var settings = new Settings(
+            width,
+            height,
+            start,
+            max,
+            initialInfected,
+            immunePercent / 100.0,
+            seed);
+
+        try
+        {
+            await StopLoopAsync();
+            sim = new Simulation(settings);
+            careTaker.Clear();
+            phase = Phase.Running;
+            needsCanvasInit = true;
+            await StartLoopAsync();
+        }
+        catch (Exception ex)
+        {
+            sim = null;
+            phase = Phase.Setup;
+            error = $"Could not start the simulation: {ex.Message}";
+        }
+    }
+
+    private bool TryParseSeed(out ulong seed)
+    {
+        var text = seedText.Trim();
+        if (text.Length == 0)
+        {
+            seed = unchecked((ulong)Random.Shared.NextInt64());
+            return true;
+        }
+
+        if (ulong.TryParse(text, out seed))
+            return true;
+
+        error = "Seed must be a non-negative integer (or blank for a random seed).";
+        return false;
+    }
+
+    private async Task Pause()
+    {
+        phase = Phase.Paused;
+        await StopLoopAsync();
+        StateHasChanged();
+    }
+
+    private async Task Resume()
+    {
+        if (sim is null)
+            return;
+
+        error = null;
+        phase = Phase.Running;
+        await StartLoopAsync();
+    }
+
+    private async Task Reset()
+    {
+        await StopLoopAsync();
+        sim = null;
+        phase = Phase.Setup;
+        needsCanvasInit = false;
+        careTaker.Clear();
+        error = null;
+        StateHasChanged();
+    }
+
+    private async Task DownloadSnapshot()
+    {
+        if (sim is null)
+            return;
+
+        try
+        {
+            careTaker.Save(sim);
+            var memento = careTaker.LastSnapshot;
+            if (memento is null)
+                return;
+
+            var json = SimulationJson.Serialize(memento);
+            await JS.InvokeVoidAsync("downloadFile", $"sim_t{sim.Step}.json", json);
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not download the snapshot: {ex.Message}";
+        }
+    }
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        error = null;
+
+        try
+        {
+            using var stream = e.File.OpenReadStream(20 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            var memento = SimulationJson.Deserialize(json);
+            var loaded = Simulation.FromMemento(memento);
+
+            await StopLoopAsync();
+            sim = loaded;
+            phase = Phase.Paused;
+            ApplySettings(loaded.Settings);
+            careTaker.Clear();
+            needsCanvasInit = true;
+            fileInputKey++;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            fileInputKey++;
+            error = $"Could not load the snapshot: {ex.Message}";
+        }
+    }
+
+    private void ApplySettings(Settings settings)
+    {
+        width = settings.W;
+        height = settings.H;
+        start = settings.Start;
+        max = settings.Max;
+        initialInfected = settings.InitialInfected;
+        immunePercent = settings.ImmunePercent * 100.0;
+        seedText = settings.Seed.ToString();
+    }
+
+    private async Task StartLoopAsync()
+    {
+        await StopLoopAsync();
+
+        var source = new CancellationTokenSource();
+        cts = source;
+        runTask = RunAsync(source.Token);
+    }
+
+    private async Task StopLoopAsync()
+    {
+        var source = cts;
+        var task = runTask;
+        cts = null;
+        runTask = null;
+
+        if (source is null)
+            return;
+
+        source.Cancel();
+
+        if (task is not null)
+        {
+            try
+            {
+                await task;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        source.Dispose();
+    }
+
+    private async Task RunAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000.0 / Simulation.StepsPerSecond));
+
+        try
+        {
+            while (!token.IsCancellationRequested && !disposed && phase == Phase.Running && sim is not null)
+            {
+                if (!await timer.WaitForNextTickAsync(token))
+                    break;
+
+                if (token.IsCancellationRequested || phase != Phase.Running || sim is null)
+                    break;
+
+                sim.Advance();
+                await DrawAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (disposed)
+                return;
+
+            phase = Phase.Paused;
+            error = $"Simulation stopped: {ex.Message}";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task InitAndDrawAsync()
+    {
+        if (sim is null)
+            return;
+
+        await JS.InvokeVoidAsync("initCanvas", sim.Settings.W, sim.Settings.H);
+        await DrawAsync();
+    }
+
+    private async Task DrawAsync()
+    {
+        if (sim is null)
+            return;
+
+        var settings = sim.Settings;
+        var scale = 800.0 / Math.Max(settings.W, settings.H);
+        await JS.InvokeVoidAsync("draw", Pack(sim), settings.W, settings.H, scale);
+    }
+
+    private static double[] Pack(Simulation simulation)
+    {
+        var data = new double[simulation.People.Count * 3];
+
+        for (var i = 0; i < simulation.People.Count; i++)
+        {
+            var person = simulation.People[i];
+            var offset = i * 3;
+            data[offset] = person.Pos.X;
+            data[offset + 1] = person.Pos.Y;
+            data[offset + 2] = (int)person.Kind;
+        }
+
+        return data;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        disposed = true;
+        await StopLoopAsync();
+    }
+}

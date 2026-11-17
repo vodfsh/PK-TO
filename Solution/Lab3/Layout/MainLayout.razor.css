@@ -1,0 +1,11 @@
+.lab-shell {
+    min-height: 100vh;
+    padding: 1.5rem;
+    background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+    .lab-shell {
+        padding: 1rem;
+    }
+}
