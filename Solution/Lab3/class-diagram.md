@@ -1,5 +1,3 @@
-# Lab 3 – Class diagram
-
 ```mermaid
 classDiagram
     direction LR
@@ -149,7 +147,6 @@ classDiagram
 
     %% ---------- UI ----------
     class Home {
-        <<Blazor>>
         -phase Phase
         -sim Simulation
         -careTaker CareTaker
@@ -157,14 +154,8 @@ classDiagram
         +DownloadSnapshot() LoadFile()
         -RunAsync() DrawAsync()
     }
-    class canvasjs {
-        <<JS>>
-        initCanvas(w, h)
-        draw(frame)
-        downloadFile(name, text)
-    }
+
     Home o-- Simulation
     Home o-- CareTaker
     Home ..> SimulationJson
-    Home ..> canvasjs : JS interop
 ```
