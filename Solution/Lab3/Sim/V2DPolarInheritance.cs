@@ -15,8 +15,6 @@ public class V2DPolarInheritance : Vector2D, IPolar2D
         return Math.Atan2(Y, X);
     }
 
-    // The Lab 2 class exposed only a read-only angle. Making it settable lets the
-    // simulation rotate an existing velocity instead of replacing the vector.
     public double Angle
     {
         get => Math.Atan2(Y, X);
